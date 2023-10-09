@@ -48,9 +48,12 @@ class Blockchain:
         return hash_operation
     
     def is_chain_valid(self):
+        if len(self.chain) <= 1:
+            return True  # Blockchain dengan satu atau tidak ada block dianggap valid
+
         prev_block = self.chain[0]
-        now_index = 1
-        while counter < len(self.chain) + 1:
+        now_index = 1  # Inisialisasi indeks dengan 1
+        while now_index < len(self.chain):
             now_block = self.chain[now_index]
 
             # 1. cek apakah hash now block = prev hash 
@@ -66,7 +69,8 @@ class Blockchain:
                 return False
 
             prev_block = now_block
-            now_index += 1
+            now_index += 1  # Naikkan indeks
+
         return True
 
 
@@ -75,7 +79,7 @@ app = Flask(__name__)
 
 blockchain = Blockchain()
 
-# buat endpoint 
+#   Endpoint untuk mengecek chain
 @app.route("/get_chain", methods=['GET'])
 def get_chain():
     response = {
@@ -84,7 +88,8 @@ def get_chain():
     }
     return jsonify(response), 200
 
-@app.route("/mining", methods=['GET'])
+#   Endpoint untuk menambah block
+@app.route("/mine", methods=['GET'])
 def mining():
     prev_block = blockchain.get_last_block()
     # get prev proof 
@@ -100,22 +105,32 @@ def mining():
     }
     return jsonify(response), 200
 
-# 1. Buatkan endpoint yang mengecek apakah chainnya valid
-@app.route("/is_valid", methods=['GET'])
+#   Endpoint untuk mengecek apakah chain valid
+@app.route("/check_validity", methods=['GET'])
 def is_valid():
     is_valid = blockchain.is_chain_valid()
     if is_valid:
         response = {
             'message': "Blockchain is valid."
         }
+        return jsonify(response), 200
     else:
         response = {
             'message': "Blockchain is not valid."
         }
+        return jsonify(response), 400
+
+#   Endpoint untuk membuat block menjadi tidak valid
+@app.route("/hack", methods=['GET'])
+def ruin_chain():
+    curr_block = blockchain.get_last_block()
+    curr_block['prev_hash'] = 'Invalid_Hash'
+    curr_block['hash'] = blockchain.get_hash(curr_block)
+    
+    response = {
+        'message': "Blockchain has been intentionally ruined",
+        'block': curr_block
+    }
     return jsonify(response), 200
 
 app.run()
-
-# Tugas 
-# 2. Simpan hash block didalam blocknya
-# 3. Fungsi dan endpoint yang mensimulasikan adanya modifikasi didalam block, sehingga chainnya tidak valid
